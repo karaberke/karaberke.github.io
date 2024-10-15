@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snake Game</title>
+  <link rel="stylesheet" href="snakestyle.css"> <!-- Link to the external CSS file -->
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <!-- <div class="sidebar">
+    <h2>Menu</h2>
+    <ul>
+      <li><a href="#">High Scores</a></li>
+    </ul>
+  </div> -->
+
+  <!-- Header -->
+  <header>
+    <nav>
+      <a href="index.html">Home</a>
+    </nav>
+  </header>
+
+  <!-- Start Screen -->
+  <div class="content" id="startScreen">
+    <h1>Welcome to Snake Game!</h1>
+    <p>Select a mode to start the game:</p>
+    <button onclick="startGame(1)">1 Player</button>
+    <button onclick="startGame(2)">2 Players</button>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div class="content" id="gameOverScreen">
+    <h1>Game Over!</h1>
+    <button onclick="restartGame()">Play Again</button>
+  </div>
+
+  <!-- Game Canvas -->
+  <div class="content">
+    <canvas id="game"></canvas>
+  </div>
+
+  <script src="snake.js"></script>
+</body>
+</html>
