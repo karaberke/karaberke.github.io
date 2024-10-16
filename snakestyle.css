@@ -86,17 +86,121 @@ nav a:hover {
   margin-bottom: 20px;
 }
 
-/* Canvas Styles */
-canvas {
-  display: none; /* Initially hidden */
-  border: 4px solid white;
-  margin: 20px auto; /* Center the canvas */
-}
-
 /* Button Styles */
 button {
   padding: 10px 20px;
   font-size: 18px;
   margin: 10px;
   cursor: pointer;
+}
+/* Game Container Styles */
+#gameContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Canvas Header Styles */
+#canvasHeader1 {
+  background-color: #444;
+  color: white;
+  font-size: 15px;
+  padding: 10px;
+  border-top-left-radius: 2px;
+  border-top-right-radius: 2px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+  /* Remove margins to ensure no extra spacing */
+  margin: 0px;
+  width: 100%; /* Default to 100% to align dynamically */
+}
+/* Canvas Header Styles */
+#canvasHeader2 {
+  background-color: #444;
+  color: white;
+  font-size: 15px;
+  padding: 10px;
+  border-top-left-radius: 2px;
+  border-top-right-radius: 2px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+  /* Remove margins to ensure no extra spacing */
+  margin: 0px;
+  width: 100%; /* Default to 100% to align dynamically */
+}
+
+/* Canvas Styles */
+canvas {
+  border: 4px solid white;
+  display: block; /* Prevent inline element issues */
+}
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 20px;
+}
+
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider-container {
+    display: flex;
+    align-items: center; /* Center vertically */
+    justify-content: center; /* Center horizontally */
+    margin-top: 20px; /* Space above the slider */
+}
+
+.slider-container span {
+    margin-right: 10px; /* Space between text and slider */
+    font-size: 18px; /* Adjust font size as needed */
+    color: white; /* Ensure text color is white */
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 4px;
+  bottom: 2px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(18px);
+  -ms-transform: translateX(18px);
+  transform: translateX(18px);
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 14px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
 }

@@ -1,20 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Snake Game</title>
   <link rel="stylesheet" href="snakestyle.css"> <!-- Link to the external CSS file -->
 </head>
-<body>
 
-  <!-- Sidebar -->
-  <!-- <div class="sidebar">
-    <h2>Menu</h2>
-    <ul>
-      <li><a href="#">High Scores</a></li>
-    </ul>
-  </div> -->
+<body>
 
   <!-- Header -->
   <header>
@@ -29,6 +23,7 @@
     <p>Select a mode to start the game:</p>
     <button onclick="startGame(1)">1 Player</button>
     <button onclick="startGame(2)">2 Players</button>
+    <button onclick="settings()">Settings</button>
   </div>
 
   <!-- Game Over Screen -->
@@ -37,11 +32,28 @@
     <button onclick="restartGame()">Play Again</button>
   </div>
 
-  <!-- Game Canvas -->
-  <div class="content">
+  <!-- Settings Screen -->
+  <div class="content" id="settingsScreen">
+    <h1>Settings</h1>
+    <div class="slider-container">
+      <span>Walls:</span>
+      <label class="switch">
+        <input type="checkbox" id="wallsSwitch" checked>
+        <span class="slider round"></span>
+      </label>
+    </div>
+    <button onclick="restartGame()">Main Screen</button>
+  </div>
+
+  <!-- Game Canvas with Header for Player 1 or 2 -->
+  <div class="content" id="gameContainer">
+    <div id="canvasHeader1">Snake 1 - Score: <span id="score1">0</span></div>
+    <div id="canvasHeader2" style="display:none;">Snake 1 - Score: <span id="score21">0</span> | Snake 2 - Score: <span
+        id="score22">0</span></div>
     <canvas id="game"></canvas>
   </div>
 
   <script src="snake.js"></script>
 </body>
+
 </html>

@@ -1,55 +1,60 @@
 var canvas = document.getElementById('game');
 var context = canvas.getContext('2d');
 var startScreen = document.getElementById('startScreen');
-var player1ScoreDisplay = document.getElementById('player1Score');
-var player2ScoreDisplay = document.getElementById('player2Score');
-var highScoreDisplay = document.getElementById('highScore');
-
+var settingsScreen = document.getElementById('settingsScreen');
+var scoreDisplay1 = document.getElementById('score1'); // Score for Player 1
+var scoreDisplay21 = document.getElementById('score21'); // Score for Player 1 in 2-player mode
+var scoreDisplay22 = document.getElementById('score22'); // Score for Player 2
+var gameOverScreen = document.getElementById('gameOverScreen');
 var grid = 16;
 var gameRunning = false;
-var playerCount = 1;  // Default to 1 player
-var highScore = 0; // Store the highest score
-const defaultSpeed = 5; // Initial speed (lower is faster)
+var playerCount = 1;
+const baseSpeed = 15;
+const MAX_SPEED = 60;
+var walls = document.getElementById('wallsSwitch').checked;
 
-// Player 1 snake
-var snake1 = {
-  x: 160,
-  y: 160,
-  dx: grid,
-  dy: 0,
-  cells: [],
-  maxCells: 4,
-  color: 'green',
-  speed: defaultSpeed,
-  applesEaten: 0,
-  count: 0
-};
 
-// Player 2 snake
-var snake2 = {
-  x: 320,
-  y: 320,
-  dx: grid,
-  dy: 0,
-  cells: [],
-  maxCells: 4,
-  color: 'blue',
-  speed: defaultSpeed,
-  applesEaten: 0,
-  count: 0
-};
-
-// Player scores
-var player1Score = 0;
-var player2Score = 0;
+var snakes = [
+  {
+    x: 160,
+    y: 160,
+    dx: grid,
+    dy: 0,
+    cells: [],
+    maxCells: 4,
+    color: 'green',
+    speed: baseSpeed,
+    score: 0,
+  },
+  {
+    x: 320,
+    y: 320,
+    dx: grid,
+    dy: 0,
+    cells: [],
+    maxCells: 4,
+    color: 'blue',
+    speed: baseSpeed,
+    score: 0,
+  },
+];
 
 var apple = { x: 320, y: 320 };
+
+function settings() {
+  // Hide start screen and game canvas
+  startScreen.style.display = 'none';
+  gameOverScreen.style.display = 'none';
+  canvas.style.display = 'none';
+
+  // Show settings screen
+  settingsScreen.style.display = 'flex';
+}
 
 function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min)) + min;
 }
 
-// Resize canvas to ensure even dimensions
 function resizeCanvas() {
   const size = Math.min(
     Math.floor((window.innerWidth - 140) / grid) * grid,
@@ -57,67 +62,149 @@ function resizeCanvas() {
   );
   canvas.width = size;
   canvas.height = size;
+  document.getElementById('canvasHeader1').style.width = `${size - 12}px`;
+  document.getElementById('canvasHeader2').style.width = `${size - 12}px`;
 }
 
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-// Start the game with 1 or 2 players
+function showElement() {
+  // Show or hide headers and scores based on the number of players
+  if (playerCount === 1) {
+    document.getElementById('canvasHeader1').style.display = 'block'; // Show Player 1 header
+    document.getElementById('canvasHeader2').style.display = 'none'; // Hide Player 2 header
+    scoreDisplay1.parentElement.style.display = 'inline'; // Show Player 1 score
+    scoreDisplay21.parentElement.style.display = 'none'; // Hide Player 1 score in 2-player mode
+    scoreDisplay22.parentElement.style.display = 'none'; // Hide Player 2 score
+  } else if (playerCount === 2) {
+    document.getElementById('canvasHeader1').style.display = 'none'; // Hide Player 1 header
+    document.getElementById('canvasHeader2').style.display = 'block'; // Show Player 2 header
+    scoreDisplay1.parentElement.style.display = 'none'; // Hide Player 1 score
+    scoreDisplay21.parentElement.style.display = 'inline'; // Show Player 1 score in 2-player mode
+    scoreDisplay22.parentElement.style.display = 'inline'; // Show Player 2 score
+  }
+}
+
 function startGame(players) {
-  playerCount = players;  // Set the player count
+  playerCount = players;
   resetGame();
-  startScreen.style.display = 'none';
+
+  // Show or hide headers and scores based on the number of players
+  showElement();
+
+  // Ensure the header is visible
   canvas.style.display = 'block';
+  settingsScreen.style.display = "none";
+  startScreen.style.display = 'none';
   gameRunning = true;
   requestAnimationFrame(loop);
 }
 
 function resetGame() {
-  Object.assign(snake1, { x: 160, y: 160, dx: grid, dy: 0, cells: [], maxCells: 4, speed: defaultSpeed, applesEaten: 0, count: 0 });
-  Object.assign(snake2, { x: 320, y: 320, dx: grid, dy: 0, cells: [], maxCells: 4, speed: defaultSpeed, applesEaten: 0, count: 0 });
-  apple.x = getRandomInt(0, canvas.width / grid) * grid;
-  apple.y = getRandomInt(0, canvas.height / grid) * grid;
+  snakes.forEach((snake, index) => {
+    if (index < playerCount) {
+      Object.assign(snake, {
+        x: index === 0 ? 160 : 320,
+        y: index === 0 ? 160 : 320,
+        dx: grid,
+        dy: 0,
+        cells: [],
+        maxCells: 4,
+        speed: baseSpeed,
+        score: 0,
+      });
+    } else {
+      Object.assign(snake, {
+        cells: [],
+        maxCells: 0,
+        score: 0,
+        dx: 0,
+        dy: 0,
+        speed: 0,
+      });
+    }
+  });
+  spawnApple();
+  gameRunning = false;
+  canvas.style.display = 'none';
+  settingsScreen.style.display = 'none'; // Fix here
+  startScreen.style.display = 'flex';
+  scoreDisplay1.textContent = 0; // Reset Player 1 score display
+  scoreDisplay21.textContent = 0; // Reset Player 1 score display in 2-player mode
+  scoreDisplay22.textContent = 0; // Reset Player 2 score display
+  showElement();
+}
+
+function spawnApple() {
+  let overlap;
+  do {
+    overlap = false;
+    apple.x = getRandomInt(0, canvas.width / grid) * grid;
+    apple.y = getRandomInt(0, canvas.height / grid) * grid;
+
+    // Check if the apple spawns on any snake's body
+    snakes.forEach(snake => {
+      snake.cells.forEach(cell => {
+        if (checkCollision(cell.x, cell.y, apple.x, apple.y)) {
+          overlap = true; // Set overlap to true to re-spawn
+        }
+      });
+    });
+  } while (overlap); // Keep spawning until no overlap
 }
 
 function gameOver() {
   gameRunning = false;
   canvas.style.display = 'none';
   startScreen.style.display = 'none';
-  document.getElementById('gameOverScreen').style.display = 'flex'; // Show Game Over screen
-  window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll back to the top  
+  settingsScreen.display = 'none';
+  snakes.forEach(snake => (snake.score = 0));
+  scoreDisplay1.textContent = snakes[0].score; // Reset Player 1 score
+  scoreDisplay21.textContent = snakes[0].score; // Reset Player 1 score in 2-player mode
+  scoreDisplay22.textContent = snakes[1].score; // Reset Player 2 score
+  gameOverScreen.style.display = 'flex';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function restartGame() {
   resetGame();
-  document.getElementById('gameOverScreen').style.display = 'none'; // Hide Game Over screen
-  startScreen.style.display = 'none'; // Ensure the start screen stays hidden
-  canvas.style.display = 'block'; // Show the game canvas
-  gameRunning = true;
-  requestAnimationFrame(loop); // Restart the game loop
+  gameOverScreen.style.display = 'none';
+  startScreen.style.display = 'flex';
+  canvas.style.display = 'block';
 }
 
 function checkCollision(x1, y1, x2, y2) {
-  return Math.abs(x1 - x2) < grid && Math.abs(y1 - y2) < grid;
+  return x1 === x2 && y1 === y2;
 }
 
 function updateSnake(snake) {
   snake.x += snake.dx;
   snake.y += snake.dy;
 
-  if (snake.x < 0) snake.x = canvas.width - grid;
-  else if (snake.x >= canvas.width) snake.x = 0;
-
-  if (snake.y < 0) snake.y = canvas.height - grid;
-  else if (snake.y >= canvas.height) snake.y = 0;
+  // Check for wall collision
+  if (walls) {
+    // If walls are enabled, check for collisions with canvas borders
+    if (snake.x < 0 || snake.x >= canvas.width || snake.y < 0 || snake.y >= canvas.height) {
+      gameOver(); // End the game if the snake hits a wall
+    }
+  } else {
+    // If walls are not enabled, allow wrapping around the canvas
+    if (snake.x < 0) snake.x = canvas.width - grid;
+    else if (snake.x >= canvas.width) snake.x = 0;
+    if (snake.y < 0) snake.y = canvas.height - grid;
+    else if (snake.y >= canvas.height) snake.y = 0;
+  }
 
   snake.cells.unshift({ x: snake.x, y: snake.y });
-
-  if (snake.cells.length > snake.maxCells) snake.cells.pop();
+  if (snake.cells.length > snake.maxCells) {
+    snake.cells.pop();
+  }
 }
 
 function drawSnake(snake) {
   context.fillStyle = snake.color;
-  snake.cells.forEach(function (cell) {
+  snake.cells.forEach(cell => {
     context.fillRect(cell.x, cell.y, grid - 1, grid - 1);
   });
 }
@@ -138,98 +225,103 @@ function drawGrid() {
   }
 }
 
-function loop() {
-  if (!gameRunning) return;
-
-  requestAnimationFrame(loop);
-
-  context.clearRect(0, 0, canvas.width, canvas.height);
-
-  drawGrid(); // Draw the grid
-
-  // Update and draw Player 1 snake
-  if (++snake1.count >= snake1.speed) {
-    snake1.count = 0;
-    updateSnake(snake1);
-  }
-  drawSnake(snake1);
-
-  // Update and draw Player 2 snake if in 2-player mode
-  if (playerCount === 2) {
-    if (++snake2.count >= snake2.speed) {
-      snake2.count = 0;
-      updateSnake(snake2);
-    }
-    drawSnake(snake2);
-  }
-
+function drawApple() {
   context.fillStyle = 'red';
   context.fillRect(apple.x, apple.y, grid - 1, grid - 1);
+}
 
-  [snake1, playerCount === 2 ? snake2 : null].forEach(function (snake) {
-    if (!snake) return;
-    snake.cells.forEach(function (cell, index) {
+function loop(timestamp) {
+  if (!gameRunning) return;
+
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  drawGrid();
+  drawApple();
+
+  snakes.forEach((snake, index) => {
+    if (index >= playerCount) return; // Skip inactive snakes
+
+    const timeSinceLastRender = timestamp - (snake.lastRenderTime || 0);
+    const speedInterval = 1000 / snake.speed;
+
+    if (timeSinceLastRender >= speedInterval) {
+      updateSnake(snake);
+      snake.lastRenderTime = timestamp;
+    }
+    drawSnake(snake);
+
+    // Check for collisions with the apple
+    snake.cells.forEach((cell, i) => {
       if (checkCollision(cell.x, cell.y, apple.x, apple.y)) {
         snake.maxCells++;
-        apple.x = getRandomInt(0, canvas.width / grid) * grid;
-        apple.y = getRandomInt(0, canvas.height / grid) * grid;
-        snake.applesEaten++;
+        spawnApple();
+        snake.score++;
 
-        // Increase speed based on apples eaten
-        if (snake.applesEaten % 5 === 0 && snake.speed > 1) {
-          snake.speed -= 0.5; // Decrease the interval to make the snake faster
+        // Update score displays
+        if (playerCount === 1) {
+          scoreDisplay1.textContent = snakes[0].score; // Update Player 1 score
+        } else {
+          scoreDisplay21.textContent = snakes[0].score; // Update Player 1 score in 2-player mode
+          scoreDisplay22.textContent = snakes[1].score; // Update Player 2 score
+        }
+
+        // Increase speed for the respective snake that ate the apple
+        if (snake.speed < MAX_SPEED) {
+          snake.speed = Math.min(MAX_SPEED, snake.speed + 0.5); // Control speed increment
         }
       }
 
-      for (var i = index + 1; i < snake.cells.length; i++) {
-        if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
+      // Check for self-collision
+      for (var j = i + 1; j < snake.cells.length; j++) {
+        if (cell.x === snake.cells[j].x && cell.y === snake.cells[j].y) {
           gameOver();
         }
       }
     });
   });
-}
 
-// Reference to the high score display
-var highScoreDisplay = document.getElementById('highScoreDisplay');
-
-// Update the high score in the sidebar
-function updateScore(player) {
-  if (player === 1) {
-    player1Score++;
-    player1ScoreDisplay.textContent = player1Score;
-    if (player1Score > highScore) {
-      highScore = player1Score;
-      highScoreDisplay.textContent = highScore; // Update the sidebar
-    }
-  } else if (player === 2) {
-    player2Score++;
-    player2ScoreDisplay.textContent = player2Score;
-  }
+  requestAnimationFrame(loop);
 }
+document.getElementById('wallsSwitch').addEventListener('change', function () {
+  walls = this.checked; // Update walls based on whether the checkbox is checked
+  console.log('Walls:', walls); // For debugging, to check the value
+});
 
 // Handle keyboard input
 document.addEventListener('keydown', function (e) {
+  // Prevent default behavior for arrow keys
   if ([37, 38, 39, 40].includes(e.which)) e.preventDefault();
 
-  if (e.which === 37 && snake1.dx === 0) {
-    snake1.dx = -grid; snake1.dy = 0;
-  } else if (e.which === 38 && snake1.dy === 0) {
-    snake1.dy = -grid; snake1.dx = 0;
-  } else if (e.which === 39 && snake1.dx === 0) {
-    snake1.dx = grid; snake1.dy = 0;
-  } else if (e.which === 40 && snake1.dy === 0) {
-    snake1.dy = grid; snake1.dx = 0;
-  }
-  if (playerCount == 2) {
-    if (e.key === 'a' && snake2.dx === 0) {
-      snake2.dx = -grid; snake2.dy = 0;
-    } else if (e.key === 'w' && snake2.dy === 0) {
-      snake2.dy = -grid; snake2.dx = 0;
-    } else if (e.key === 'd' && snake2.dx === 0) {
-      snake2.dx = grid; snake2.dy = 0;
-    } else if (e.key === 's' && snake2.dy === 0) {
-      snake2.dy = grid; snake2.dx = 0;
+  const player1Controls = { 37: [-grid, 0], 38: [0, -grid], 39: [grid, 0], 40: [0, grid] }; // Arrow keys
+  const player2Controls = { 65: [-grid, 0], 87: [0, -grid], 68: [grid, 0], 83: [0, grid] }; // WASD for Player 2
+
+  // Check for Player 1 controls (arrow keys or WASD)
+  if (playerCount === 1) {
+    if (e.which in player1Controls) {
+      if (snakes[0].dx !== -player1Controls[e.which][0] || snakes[0].dy !== -player1Controls[e.which][1]) {
+        snakes[0].dx = player1Controls[e.which][0];
+        snakes[0].dy = player1Controls[e.which][1];
+      }
+    } else if (e.which in player2Controls) {
+      if (snakes[0].dx !== -player2Controls[e.which][0] || snakes[0].dy !== -player2Controls[e.which][1]) {
+        snakes[0].dx = player2Controls[e.which][0];
+        snakes[0].dy = player2Controls[e.which][1];
+      }
+    }
+  } else if (playerCount === 2) {
+    // Handle Player 1 controls
+    if (e.which in player1Controls) {
+      if (snakes[0].dx !== -player1Controls[e.which][0] || snakes[0].dy !== -player1Controls[e.which][1]) {
+        snakes[0].dx = player1Controls[e.which][0];
+        snakes[0].dy = player1Controls[e.which][1];
+      }
+    }
+
+    // Handle Player 2 controls
+    if (e.which in player2Controls) {
+      if (snakes[1].dx !== -player2Controls[e.which][0] || snakes[1].dy !== -player2Controls[e.which][1]) {
+        snakes[1].dx = player2Controls[e.which][0];
+        snakes[1].dy = player2Controls[e.which][1];
+      }
     }
   }
 });
